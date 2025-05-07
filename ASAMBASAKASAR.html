@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asam Basa Challenge</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <style>
+    .question-btn {
+      width: 100px;
+      height: 50px;
+      font-weight: bold;
+    }
+
+    .correct {
+      background-color: #4ade80 !important; /* green */
+      color: white;
+    }
+
+    .wrong {
+      background-color: #f87171 !important; /* red */
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <div class="text-center mb-4">
+    <h1 class="fw-bold text-primary">Asam Basa Challenge</h1>
+    <p>Uji pengetahuanmu tentang zat Asam, Basa, atau Netral</p>
+  </div>
+
+  <div class="card p-4 shadow">
+    <div class="mb-3">
+      <h5 id="question">Tekan mulai untuk memulai permainan.</h5>
+      <h3 id="substance" class="text-primary fw-bold"></h3>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mb-3">
+      <button class="btn btn-danger question-btn" onclick="checkAnswer('Asam')">Asam</button>
+      <button class="btn btn-primary question-btn" onclick="checkAnswer('Basa')">Basa</button>
+      <button class="btn btn-secondary question-btn" onclick="checkAnswer('Netral')">Netral</button>
+    </div>
+
+    <div class="text-center mb-3">
+      <p id="feedback" class="fw-semibold"></p>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <div><strong>Skor:</strong> <span id="score">0</span></div>
+      <div id="timer" class="badge bg-warning text-dark">10</div>
+    </div>
+
+    <div id="leaderboard" class="text-center mt-2 text-muted fw-semibold d-none">
+      Skor Tertinggi: <span id="high-score">0</span>
+    </div>
+
+    <div class="text-center mt-4">
+      <button id="start-btn" class="btn btn-success px-4">Mulai</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const questions = [
+    { substance: "Air Lemon", question: "Apa sifat zat dari air lemon?", answer: "Asam", explanation: "Mengandung asam sitrat." },
+    { substance: "Sabun", question: "Apa sifat zat dari sabun?", answer: "Basa", explanation: "Dapat menetralkan minyak dan kotoran." },
+    { substance: "Air Murni", question: "Apa sifat zat dari air murni?", answer: "Netral", explanation: "Memiliki pH 7." },
+    { substance: "Cuka", question: "Apa sifat zat dari cuka?", answer: "Asam", explanation: "Mengandung asam asetat." },
+    { substance: "Pasta Gigi", question: "Apa sifat zat dari pasta gigi?", answer: "Basa", explanation: "Menetralkan asam di mulut." },
+    { substance: "Air Garam", question: "Apa sifat zat dari air garam?", answer: "Netral", explanation: "Larutan NaCl bersifat netral." },
+    { substance: "Jeruk", question: "Apa sifat zat dari jeruk?", answer: "Asam", explanation: "Mengandung asam sitrat dan vitamin C." },
+    { substance: "Baking Soda", question: "Apa sifat zat dari baking soda?", answer: "Basa", explanation: "Bersifat basa dengan pH 8–9." },
+    { substance: "Gula", question: "Apa sifat zat dari gula?", answer: "Netral", explanation: "Tidak bersifat asam atau basa." },
+    { substance: "Kopi", question: "Apa sifat zat dari kopi?", answer: "Asam", explanation: "Sedikit asam, pH sekitar 5." }
+  ];
+
+  let currentIndex = 0;
+  let score = 0;
+  let timer;
+  let timeLeft = 10;
+  let gameQuestions = [];
+
+  const questionElement = document.getElementById('question');
+  const substanceElement = document.getElementById('substance');
+  const feedback = document.getElementById('feedback');
+  const scoreElement = document.getElementById('score');
+  const timerDisplay = document.getElementById('timer');
+  const startBtn = document.getElementById('start-btn');
+  const leaderboard = document.getElementById('leaderboard');
+  const highScoreElement = document.getElementById('high-score');
+
+  startBtn.addEventListener('click', startGame);
+
+  function shuffleArray(array) {
+    return array.sort(() => Math.random() - 0.5);
+  }
+
+  function startGame() {
+    gameQuestions = shuffleArray([...questions]).slice(0, 10);
+    currentIndex = 0;
+    score = 0;
+    scoreElement.textContent = score;
+    feedback.textContent = '';
+    startBtn.disabled = true;
+    leaderboard.classList.add('d-none');
+    showQuestion();
+    updateHighScore();
+  }
+
+  function showQuestion() {
+    clearInterval(timer);
+    timeLeft = 10;
+    updateTimerDisplay();
+    timer = setInterval(countdown, 1000);
+
+    const q = gameQuestions[currentIndex];
+    questionElement.textContent = q.question;
+    substanceElement.textContent = q.substance;
+    feedback.textContent = '';
+    resetButtonStyles();
+  }
+
+  function countdown() {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      feedback.textContent = "Waktu habis!";
+      nextQuestionDelayed();
+    }
+  }
+
+  function updateTimerDisplay() {
+    timerDisplay.textContent = timeLeft;
+  }
+
+  function checkAnswer(selected) {
+    clearInterval(timer);
+    const correct = gameQuestions[currentIndex].answer;
+    const buttons = document.querySelectorAll('.question-btn');
+    buttons.forEach(btn => {
+      btn.disabled = true;
+      if (btn.textContent === correct) btn.classList.add('correct');
+      if (btn.textContent === selected && selected !== correct) btn.classList.add('wrong');
+    });
+
+    if (selected === correct) {
+      score++;
+      feedback.textContent = "Benar!";
+    } else {
+      feedback.textContent = `Salah! Jawaban benar: ${correct}`;
+    }
+
+    scoreElement.textContent = score;
+    nextQuestionDelayed();
+  }
+
+  function resetButtonStyles() {
+    const buttons = document.querySelectorAll('.question-btn');
+    buttons.forEach(btn => {
+      btn.classList.remove('correct', 'wrong');
+      btn.disabled = false;
+    });
+  }
+
+  function nextQuestionDelayed() {
+    setTimeout(() => {
+      currentIndex++;
+      if (currentIndex < gameQuestions.length) {
+        showQuestion();
+      } else {
+        endGame();
+      }
+    }, 1500);
+  }
+
+  function endGame() {
+    questionElement.textContent = "Game selesai! Skor akhir: " + score;
+    substanceElement.textContent = "";
+    timerDisplay.textContent = '';
+    feedback.classList.add('text-success');
+    startBtn.disabled = false;
+    updateHighScore();
+    resetButtonStyles();
+  }
+
+  function updateHighScore() {
+    const highScore = parseInt(localStorage.getItem('highScore')) || 0;
+    if (score > highScore) {
+      localStorage.setItem('highScore', score);
+    }
+    showHighScore();
+  }
+
+  function showHighScore() {
+    const highScore = parseInt(localStorage.getItem('highScore')) || 0;
+    highScoreElement.textContent = highScore;
+    leaderboard.classList.remove('d-none');
+  }
+
+  window.onload = showHighScore;
+</script>
+
+</body>
+</html>
